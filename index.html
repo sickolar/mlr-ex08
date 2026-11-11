@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>Leaf Classifier — MobileNetV3 ONNX Web App</title>
+  <!-- ONNX Runtime Web loaded from CDN (the only external resource; all inference happens locally on-device) -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+  <style>
+    :root {
+      /* Modern Pastel Brown & Crisp White Palette */
+      --bg-page: #FAF6F2;
+      --bg-subtle: #F3EBE3;
+      --surface-white: #FFFFFF;
+      --surface-warm: #FDFBF9;
+      --pastel-brown-100: #EFE5DC;
+      --pastel-brown-200: #E2D0C1;
+      --pastel-brown-300: #CCAFA0;
+      --pastel-brown-400: #B59279;
+      --pastel-brown-500: #9C785E;
+      --pastel-brown-600: #7E5D45;
+      --pastel-brown-700: #5E4330;
+      --text-primary: #36261B;
+      --text-secondary: #786252;
+      --text-muted: #A18C7D;
+      --border-soft: #E8DDD3;
+      --border-accent: #D4BFAF;
+      --success-bg: #EDF5EE;
+      --success-text: #2F6839;
+      --success-border: #C3DEC7;
+      --shadow-sm: 0 4px 14px rgba(94, 67, 48, 0.06);
+      --shadow-md: 0 12px 32px rgba(94, 67, 48, 0.09);
+      --radius-lg: 22px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #FFFFFF 0%, var(--bg-page) 65%, var(--bg-subtle) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 20px 16px 48px;
+    }
+
+    .app-container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* Header */
+    .app-header {
+      background: var(--surface-white);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--pastel-brown-100) 0%, var(--pastel-brown-200) 100%);
+      border: 1px solid var(--border-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pastel-brown-600);
+      flex-shrink: 0;
+    }
+
+    .brand-title h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .brand-title p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--pastel-brown-100);
+      color: var(--pastel-brown-700);
+      border: 1px solid var(--border-accent);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--pastel-brown-500);
+      transition: background 0.3s ease;
+    }
+
+    .status-pill.ready {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border-color: var(--success-border);
+    }
+
+    .status-pill.ready .status-dot {
+      background: #378845;
+      box-shadow: 0 0 0 3px rgba(55, 136, 69, 0.18);
+    }
+
+    /* Main Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-header {
+        padding: 18px 20px;
+      }
+    }
+
+    .card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg-page);
+      padding: 5px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-soft);
+      margin-bottom: 18px;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab-btn.active {
+      background: var(--surface-white);
+      color: var(--pastel-brown-700);
+      box-shadow: 0 2px 8px rgba(94, 67, 48, 0.08);
+      border: 1px solid var(--border-soft);
+    }
+
+    /* Viewport / Camera Container */
+    .viewport-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 420px;
+      background: linear-gradient(145deg, #F6EFE8 0%, #EAE0D5 100%);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #camera-video,
+    #uploaded-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    /* Central Square Guide Overlay */
+    .crop-guide {
+      position: absolute;
+      inset: 10%;
+      border: 2px dashed rgba(255, 255, 255, 0.85);
+      border-radius: 16px;
+      box-shadow: 0 0 0 9999px rgba(54, 38, 27, 0.18);
+      pointer-events: none;
+      display: none;
+    }
+
+    .crop-guide-label {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(54, 38, 27, 0.72);
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+
+    .viewport-placeholder {
+      text-align: center;
+      padding: 28px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .viewport-placeholder svg {
+      color: var(--pastel-brown-500);
+      opacity: 0.85;
+    }
+
+    /* Controls Bar */
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 135px;
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--pastel-brown-500) 0%, var(--pastel-brown-600) 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(126, 93, 69, 0.22);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--pastel-brown-600) 0%, var(--pastel-brown-700) 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-page);
+      color: var(--pastel-brown-700);
+      border-color: var(--border-accent);
+    }
+
+    .btn-secondary:hover {
+      background: var(--pastel-brown-100);
+    }
+
+    .btn-outline {
+      background: var(--surface-white);
+      color: var(--text-secondary);
+      border-color: var(--border-soft);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    .file-input-hidden {
+      display: none;
+    }
+
+    /* Model Input Preview Strip */
+    .tensor-preview-bar {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: var(--surface-warm);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #crop-canvas {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      border: 1px solid var(--border-accent);
+      background: var(--pastel-brown-100);
+      flex-shrink: 0;
+      image-rendering: auto;
+    }
+
+    .tensor-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .tensor-meta strong {
+      color: var(--text-primary);
+      display: block;
+      font-size: 0.82rem;
+    }
+
+    /* Top Prediction Banner */
+    .top-prediction-banner {
+      background: linear-gradient(135deg, var(--bg-page) 0%, var(--pastel-brown-100) 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .top-pred-label {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      color: var(--pastel-brown-600);
+    }
+
+    .top-pred-species {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-transform: capitalize;
+      margin-top: 2px;
+    }
+
+    .top-pred-conf {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--pastel-brown-600);
+      font-variant-numeric: tabular-nums;
+      background: var(--surface-white);
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Probability Bars */
+    .prob-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .prob-item {
+      background: var(--surface-warm);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .prob-item.winner {
+      background: var(--surface-white);
+      border-color: var(--pastel-brown-400);
+      box-shadow: 0 4px 12px rgba(156, 120, 94, 0.1);
+    }
+
+    .prob-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .species-name {
+      font-weight: 700;
+      font-size: 0.96rem;
+      text-transform: capitalize;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .species-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--pastel-brown-100);
+      color: var(--pastel-brown-700);
+      font-weight: 600;
+    }
+
+    .prob-values {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .prob-pct {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    .prob-raw {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .prob-track {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .prob-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--pastel-brown-300) 0%, var(--pastel-brown-500) 100%);
+      transition: width 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .prob-item.winner .prob-fill {
+      background: linear-gradient(90deg, var(--pastel-brown-400) 0%, var(--pastel-brown-600) 100%);
+    }
+
+    /* Verification Box for check_image.jpg */
+    .verification-box {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-page);
+      border: 1px solid var(--border-accent);
+      display: none;
+    }
+
+    .verification-box.visible {
+      display: block;
+    }
+
+    .verification-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .verification-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--pastel-brown-700);
+    }
+
+    .match-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+
+    .verify-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .verify-table th,
+    .verify-table td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .verify-table th {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .verify-table td.mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    /* Footer / QR Code Card */
+    .qr-footer-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .qr-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .qr-box {
+      padding: 10px;
+      background: #FFFFFF;
+      border: 2px solid var(--border-accent);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 136px;
+      height: 136px;
+      flex-shrink: 0;
+    }
+
+    .qr-box svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .qr-info h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .qr-info p {
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      max-width: 440px;
+    }
+
+    .qr-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--pastel-brown-600);
+      background: var(--bg-page);
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-accent);
+      text-decoration: none;
+      word-break: break-all;
+      transition: background 0.2s ease;
+    }
+
+    .qr-link:hover {
+      background: var(--pastel-brown-100);
+      color: var(--pastel-brown-700);
+    }
+
+    .privacy-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      max-width: 260px;
+      background: var(--surface-warm);
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-soft);
+    }
+
+    .error-banner {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: #FDF2F0;
+      border: 1px solid #F1C8C1;
+      color: #8E3023;
+      font-size: 0.82rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1>Botanical Leaf Classifier</h1>
+          <p>On-Device MobileNetV3 • Apple, Cherry, Chestnut &amp; Maple</p>
+        </div>
+      </div>
+      <div id="model-status" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-text">Loading ONNX model…</span>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-grid">
+      <!-- Left Column: Camera & Photo Input -->
+      <section class="card" aria-label="Image Input">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Input Source</span>
+          </div>
+          <span id="fps-badge" class="card-subtitle">96 × 96 RGB Tensor</span>
+        </div>
+
+        <div class="mode-tabs" role="tablist">
+          <button id="tab-camera" class="tab-btn active" type="button" role="tab" aria-selected="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+            Live Phone Camera
+          </button>
+          <button id="tab-upload" class="tab-btn" type="button" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            Photo / Check Image
+          </button>
+        </div>
+
+        <div class="viewport-wrapper">
+          <!-- Playsinline & muted are required for Safari on iPhone live video -->
+          <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
+          <img id="uploaded-image" alt="Selected leaf for classification" />
+          <div id="crop-guide" class="crop-guide">
+            <span class="crop-guide-label">Central Square Crop (96×96)</span>
+          </div>
+          <div id="viewport-placeholder" class="viewport-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+            <div>
+              <strong>Point your rear camera at a leaf</strong>
+              <p style="font-size: 0.82rem; margin-top: 4px;">Or upload a photo / test <code>check_image.jpg</code> below</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="camera-error" class="error-banner"></div>
+
+        <!-- Camera & Fallback Controls -->
+        <div class="controls-row">
+          <button id="btn-start-camera" class="btn btn-primary" type="button">
+            Start Rear Camera
+          </button>
+          <button id="btn-switch-camera" class="btn btn-outline" type="button" style="display: none;">
+            Flip Camera
+          </button>
+          <label for="file-input" class="btn btn-secondary">
+            Upload Leaf Photo
+          </label>
+          <input id="file-input" class="file-input-hidden" type="file" accept="image/*" />
+        </div>
+
+        <div class="controls-row" style="margin-top: 10px;">
+          <button id="btn-check-image" class="btn btn-outline" type="button">
+            Verify check_image.jpg vs Notebook
+          </button>
+        </div>
+
+        <!-- 96x96 Preprocessed Crop Preview -->
+        <div class="tensor-preview-bar">
+          <canvas id="crop-canvas" width="96" height="96"></canvas>
+          <div class="tensor-meta">
+            <strong>Model Input Preview (96 × 96 Square Crop)</strong>
+            <span>RGB scaled to [0, 1], normalized by ImageNet mean &amp; std, shape <code>1×3×96×96</code> (NCHW)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Live Probabilities -->
+      <section class="card" aria-label="Classification Probabilities">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Class Probabilities</span>
+          </div>
+          <span id="inference-time" class="card-subtitle">Waiting for input…</span>
+        </div>
+
+        <div class="top-prediction-banner">
+          <div>
+            <div class="top-pred-label">Predicted Species</div>
+            <div id="top-species" class="top-pred-species">—</div>
+          </div>
+          <div id="top-confidence" class="top-pred-conf">0.0%</div>
+        </div>
+
+        <div id="prob-list" class="prob-list">
+          <!-- Populated dynamically from model_info.json classes -->
+        </div>
+
+        <!-- Notebook Verification Comparison Table -->
+        <div id="verification-box" class="verification-box">
+          <div class="verification-header">
+            <span class="verification-title">Notebook Verification (<code>check_image.jpg</code>)</span>
+            <span id="verify-badge" class="match-badge">Checking…</span>
+          </div>
+          <table class="verify-table">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Page Probability</th>
+                <th>check_expected.json</th>
+                <th>Diff</th>
+              </tr>
+            </thead>
+            <tbody id="verify-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom QR Code & Deployment Link -->
+    <footer class="qr-footer-card">
+      <div class="qr-section">
+        <div id="qr-container" class="qr-box" aria-label="QR Code for Public GitHub Pages URL">
+          <!-- Locally generated inline SVG QR code pointing to https://sickolar.github.io/mlr-ex08/ -->
+        </div>
+        <div class="qr-info">
+          <h3>Open on Your Phone (GitHub Pages)</h3>
+          <p>Scan this locally generated QR code with your phone's camera or tap the public link below to launch the live leaf classifier directly in mobile Safari or Chrome:</p>
+          <a id="public-app-link" class="qr-link" href="https://sickolar.github.io/mlr-ex08/" target="_blank" rel="noopener">
+            https://sickolar.github.io/mlr-ex08/
+          </a>
+        </div>
+      </div>
+      <div class="privacy-note">
+        <strong>100% On-Device Privacy:</strong> Camera frames and uploaded photos are processed strictly inside your browser via WebAssembly. No images ever leave your phone.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================================================
+    // 1. CONFIGURATION & DEFAULT MODEL METADATA (loaded from ./model_info.json)
+    // ============================================================================
+    const PUBLIC_PAGES_URL = "https://sickolar.github.io/mlr-ex08/";
+
+    let modelInfo = {
+      classes: ["apple", "cherry", "chestnut", "maple"],
+      input_size: 96,
+      mean: [0.485, 0.456, 0.406],
+      std: [0.229, 0.224, 0.225]
+    };
+
+    let ortSession = null;
+    let videoStream = null;
+    let isCameraRunning = false;
+    let currentFacingMode = "environment"; // Rear camera by default on phones
+    let animationFrameId = null;
+    let isInferring = false;
+
+    // DOM Elements
+    const statusPill = document.getElementById("model-status");
+    const statusText = document.getElementById("status-text");
+    const videoEl = document.getElementById("camera-video");
+    const uploadedImgEl = document.getElementById("uploaded-image");
+    const cropGuideEl = document.getElementById("crop-guide");
+    const placeholderEl = document.getElementById("viewport-placeholder");
+    const cameraErrorEl = document.getElementById("camera-error");
+    const cropCanvas = document.getElementById("crop-canvas");
+    const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
+    const probListEl = document.getElementById("prob-list");
+    const topSpeciesEl = document.getElementById("top-species");
+    const topConfidenceEl = document.getElementById("top-confidence");
+    const inferenceTimeEl = document.getElementById("inference-time");
+    const verifyBoxEl = document.getElementById("verification-box");
+    const verifyTbodyEl = document.getElementById("verify-tbody");
+    const verifyBadgeEl = document.getElementById("verify-badge");
+
+    // ============================================================================
+    // 2. PREPROCESSING PIPELINE (Matches model_info.json & Notebook Transform)
+    // ============================================================================
+    /**
+     * Crops the central square of the source image/video frame, resizes it to
+     * input_size × input_size (96 × 96), divides RGB pixel values by 255 to scale
+     * to [0, 1], standardizes each channel with (val - mean[c]) / std[c], and
+     * packs channels in planar NCHW order: shape [1, 3, 96, 96] (R plane, G plane, B plane).
+     */
+    function preprocessImageToTensor(sourceElement, sourceWidth, sourceHeight) {
+      const size = modelInfo.input_size; // 96
+      const mean = modelInfo.mean;       // [0.485, 0.456, 0.406]
+      const std = modelInfo.std;         // [0.229, 0.224, 0.225]
+
+      // Step 1: Compute central square crop coordinates
+      const side = Math.min(sourceWidth, sourceHeight);
+      const sx = Math.floor((sourceWidth - side) / 2);
+      const sy = Math.floor((sourceHeight - side) / 2);
+
+      // Step 2: Resize central square crop to 96 × 96 on the offscreen/preview canvas
+      cropCanvas.width = size;
+      cropCanvas.height = size;
+      cropCtx.clearRect(0, 0, size, size);
+      cropCtx.drawImage(sourceElement, sx, sy, side, side, 0, 0, size, size);
+
+      // Step 3: Read RGBA bytes and convert to standardized Float32 NCHW tensor (1 × 3 × 96 × 96)
+      const imageData = cropCtx.getImageData(0, 0, size, size).data;
+      const numPixels = size * size;
+      const tensorData = new Float32Array(3 * numPixels);
+
+      for (let i = 0; i < numPixels; i++) {
+        // Scale 8-bit RGB [0..255] to [0..1]
+        const r = imageData[i * 4] / 255.0;
+        const g = imageData[i * 4 + 1] / 255.0;
+        const b = imageData[i * 4 + 2] / 255.0;
+
+        // Standardize each channel with ImageNet mean/std and store in NCHW planar order
+        tensorData[i] = (r - mean[0]) / std[0];                 // Channel 0: Red
+        tensorData[numPixels + i] = (g - mean[1]) / std[1];     // Channel 1: Green
+        tensorData[2 * numPixels + i] = (b - mean[2]) / std[2]; // Channel 2: Blue
+      }
+
+      return new ort.Tensor("float32", tensorData, [1, 3, size, size]);
+    }
+
+    // Numerically stable Softmax over raw model logits
+    function softmax(logitsArray) {
+      let maxLogit = -Infinity;
+      for (let i = 0; i < logitsArray.length; i++) {
+        if (logitsArray[i] > maxLogit) maxLogit = logitsArray[i];
+      }
+      const exps = new Float32Array(logitsArray.length);
+      let sumExps = 0;
+      for (let i = 0; i < logitsArray.length; i++) {
+        const e = Math.exp(logitsArray[i] - maxLogit);
+        exps[i] = e;
+        sumExps += e;
+      }
+      const probs = new Float32Array(logitsArray.length);
+      for (let i = 0; i < logitsArray.length; i++) {
+        probs[i] = exps[i] / sumExps;
+      }
+      return probs;
+    }
+
+    // ============================================================================
+    // 3. UI RENDERING & MODEL INFERENCE
+    // ============================================================================
+    function buildProbabilityBars() {
+      probListEl.innerHTML = "";
+      modelInfo.classes.forEach((clsName, idx) => {
+        const item = document.createElement("div");
+        item.className = "prob-item";
+        item.id = `prob-item-${idx}`;
+        item.innerHTML = `
+          <div class="prob-row-top">
+            <span class="species-name">
+              ${clsName}
+              <span class="species-badge">Class ${idx}</span>
+            </span>
+            <div class="prob-values">
+              <span class="prob-pct" id="prob-pct-${idx}">0.0%</span>
+              <span class="prob-raw" id="prob-raw-${idx}">(0.0000)</span>
+            </div>
+          </div>
+          <div class="prob-track">
+            <div class="prob-fill" id="prob-fill-${idx}"></div>
+          </div>
+        `;
+        probListEl.appendChild(item);
+      });
+    }
+
+    function updateProbabilityUI(probs, elapsedMs) {
+      let bestIdx = 0;
+      for (let i = 1; i < probs.length; i++) {
+        if (probs[i] > probs[bestIdx]) bestIdx = i;
+      }
+
+      topSpeciesEl.textContent = modelInfo.classes[bestIdx];
+      topConfidenceEl.textContent = (probs[bestIdx] * 100).toFixed(1) + "%";
+      inferenceTimeEl.textContent = `Inference: ${elapsedMs.toFixed(1)} ms`;
+
+      for (let i = 0; i < modelInfo.classes.length; i++) {
+        const p = probs[i];
+        const pctStr = (p * 100).toFixed(2) + "%";
+        const rawStr = `(${p.toFixed(4)})`;
+
+        document.getElementById(`prob-pct-${i}`).textContent = pctStr;
+        document.getElementById(`prob-raw-${i}`).textContent = rawStr;
+        document.getElementById(`prob-fill-${i}`).style.width = `${Math.max(0, Math.min(100, p * 100))}%`;
+
+        const itemEl = document.getElementById(`prob-item-${i}`);
+        if (i === bestIdx) {
+          itemEl.classList.add("winner");
+        } else {
+          itemEl.classList.remove("winner");
+        }
+      }
+    }
+
+    async function classifySource(sourceElement, width, height) {
+      if (!ortSession || isInferring) return null;
+      isInferring = true;
+      try {
+        const t0 = performance.now();
+        const inputTensor = preprocessImageToTensor(sourceElement, width, height);
+        const feeds = { [ortSession.inputNames[0]]: inputTensor };
+        const results = await ortSession.run(feeds);
+        const logits = results[ortSession.outputNames[0]].data;
+        const probs = softmax(logits);
+        const elapsed = performance.now() - t0;
+        updateProbabilityUI(probs, elapsed);
+        return probs;
+      } catch (err) {
+        console.error("Inference error:", err);
+        return null;
+      } finally {
+        isInferring = false;
+      }
+    }
+
+    // ============================================================================
+    // 4. LIVE PHONE CAMERA LOOP (Safari iOS & Android Compatible)
+    // ============================================================================
+    async function startCamera() {
+      cameraErrorEl.style.display = "none";
+      stopCamera();
+
+      try {
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: currentFacingMode },
+            width: { ideal: 640 },
+            height: { ideal: 640 }
+          }
+        };
+
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoEl.srcObject = videoStream;
+        videoEl.style.display = "block";
+        uploadedImgEl.style.display = "none";
+        placeholderEl.style.display = "none";
+        cropGuideEl.style.display = "block";
+        verifyBoxEl.classList.remove("visible");
+
+        await videoEl.play();
+        isCameraRunning = true;
+
+        document.getElementById("btn-start-camera").textContent = "Stop Camera";
+        document.getElementById("btn-switch-camera").style.display = "inline-flex";
+        setActiveTab("camera");
+
+        requestAnimationFrame(cameraLoop);
+      } catch (err) {
+        cameraErrorEl.textContent = `Camera access unavailable (${err.message || err.name}). You can upload a leaf photo or test check_image.jpg below.`;
+        cameraErrorEl.style.display = "block";
+      }
+    }
+
+    function stopCamera() {
+      isCameraRunning = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+      videoEl.srcObject = null;
+      videoEl.style.display = "none";
+      cropGuideEl.style.display = "none";
+      document.getElementById("btn-start-camera").textContent = "Start Rear Camera";
+      document.getElementById("btn-switch-camera").style.display = "none";
+    }
+
+    async function cameraLoop() {
+      if (!isCameraRunning) return;
+      if (videoEl.readyState >= videoEl.HAVE_CURRENT_DATA && videoEl.videoWidth > 0) {
+        await classifySource(videoEl, videoEl.videoWidth, videoEl.videoHeight);
+      }
+      if (isCameraRunning) {
+        animationFrameId = requestAnimationFrame(cameraLoop);
+      }
+    }
+
+    // ============================================================================
+    // 5. PHOTO UPLOAD & NOTEBOOK check_image.jpg VERIFICATION
+    // ============================================================================
+    function setActiveTab(mode) {
+      const camTab = document.getElementById("tab-camera");
+      const upTab = document.getElementById("tab-upload");
+      if (mode === "camera") {
+        camTab.classList.add("active");
+        camTab.setAttribute("aria-selected", "true");
+        upTab.classList.remove("active");
+        upTab.setAttribute("aria-selected", "false");
+      } else {
+        upTab.classList.add("active");
+        upTab.setAttribute("aria-selected", "true");
+        camTab.classList.remove("active");
+        camTab.setAttribute("aria-selected", "false");
+      }
+    }
+
+    function handleImageFile(file) {
+      if (!file) return;
+      stopCamera();
+      setActiveTab("upload");
+      verifyBoxEl.classList.remove("visible");
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedImgEl.onload = async () => {
+          placeholderEl.style.display = "none";
+          uploadedImgEl.style.display = "block";
+          await classifySource(uploadedImgEl, uploadedImgEl.naturalWidth, uploadedImgEl.naturalHeight);
+        };
+        uploadedImgEl.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function verifyCheckImage() {
+      stopCamera();
+      setActiveTab("upload");
+      cameraErrorEl.style.display = "none";
+
+      try {
+        const expectedResp = await fetch("./check_expected.json", { cache: "no-store" });
+        const expectedJson = await expectedResp.json();
+
+        await new Promise((resolve, reject) => {
+          uploadedImgEl.onload = resolve;
+          uploadedImgEl.onerror = reject;
+          uploadedImgEl.src = "./check_image.jpg?t=" + Date.now();
+        });
+
+        placeholderEl.style.display = "none";
+        uploadedImgEl.style.display = "block";
+
+        const probs = await classifySource(
+          uploadedImgEl,
+          uploadedImgEl.naturalWidth,
+          uploadedImgEl.naturalHeight
+        );
+
+        if (!probs) return;
+
+        verifyTbodyEl.innerHTML = "";
+        let maxDiff = 0;
+
+        modelInfo.classes.forEach((cls, idx) => {
+          const pageVal = probs[idx];
+          const expVal = expectedJson[cls];
+          const diff = Math.abs(pageVal - expVal);
+          if (diff > maxDiff) maxDiff = diff;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="text-transform: capitalize; font-weight: 600;">${cls}</td>
+            <td class="mono">${pageVal.toFixed(6)}</td>
+            <td class="mono">${expVal.toFixed(6)}</td>
+            <td class="mono">${diff.toExponential(2)}</td>
+          `;
+          verifyTbodyEl.appendChild(tr);
+        });
+
+        const agreesToThreeDecimals = maxDiff < 0.0005;
+        verifyBadgeEl.textContent = agreesToThreeDecimals
+          ? `✓ Matches to 3+ decimals (max diff ${maxDiff.toFixed(6)})`
+          : `Max diff: ${maxDiff.toFixed(5)}`;
+        verifyBoxEl.classList.add("visible");
+      } catch (err) {
+        console.error("Failed to verify check_image.jpg:", err);
+      }
+    }
+
+    // ============================================================================
+    // 6. LOCAL IN-BROWSER SVG QR CODE RENDERER (No External QR Service Used)
+    // ============================================================================
+    // Verified ISO/IEC 18004 QR Matrix (Version 3, Error Correction M) encoding:
+    // "https://sickolar.github.io/mlr-ex08/"
+    const QR_MATRIX = [
+      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,0,1,0,0,1,1,1,0,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,1,0,1,1,1,0,1,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,0,0,0,1,1,1,1,0,1,0,0,0,1,1,0,1,0,1,1,1,0,1],
+      [1,0,1,1,1,0,1,0,1,0,1,0,0,0,0,0,0,1,1,0,1,0,1,0,1,1,1,0,1],
+      [1,0,1,1,1,0,1,0,0,0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,1,1,1,1,0,0,1,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,1,1,1,0,1,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0],
+      [1,0,1,1,0,1,1,1,0,0,1,0,1,1,1,1,0,1,1,0,0,0,1,0,0,1,0,1,1],
+      [0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],
+      [0,0,0,1,0,1,1,1,1,1,0,1,1,0,1,0,0,1,0,0,1,1,1,0,1,0,1,1,0],
+      [1,0,0,0,0,1,0,0,0,1,1,1,1,1,1,0,1,0,1,1,1,1,0,0,1,0,0,0,1],
+      [1,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,1,1,0,0,1,0,0,0,0,1,1,0,0],
+      [0,1,0,1,1,0,0,1,1,0,0,1,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1,1,1],
+      [1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,0,1,1,0,1,1,1],
+      [1,0,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0],
+      [1,1,0,0,1,1,1,1,0,0,0,1,0,0,0,1,1,0,0,1,1,1,0,1,1,1,0,1,0],
+      [0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,1,0,1,0,0,1,0,0,1,0,1,1,1,0],
+      [1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,1,0,1,0,0],
+      [0,0,1,0,1,1,0,0,0,1,0,1,1,0,0,0,1,1,1,1,0,1,0,1,1,0,1,0,0],
+      [0,1,0,1,1,0,1,1,1,0,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+      [0,0,0,0,0,0,0,0,1,1,1,1,0,1,1,0,1,1,1,0,1,0,0,0,1,1,1,1,1],
+      [1,1,1,1,1,1,1,0,1,1,0,0,0,1,0,0,1,1,1,1,1,0,1,0,1,1,0,1,0],
+      [1,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,1,0,0,1],
+      [1,0,1,1,1,0,1,0,0,0,1,1,0,0,1,0,0,1,0,0,1,1,1,1,1,0,1,0,0],
+      [1,0,1,1,1,0,1,0,1,1,0,1,1,0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,1],
+      [1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,1,0,1,0,0,1,0,1],
+      [1,0,0,0,0,0,1,0,0,1,1,0,1,1,0,0,0,0,1,0,1,1,0,1,0,1,0,1,0],
+      [1,1,1,1,1,1,1,0,1,1,1,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0]
+    ];
+
+    function renderLocalQRCode() {
+      const container = document.getElementById("qr-container");
+      const size = QR_MATRIX.length;
+      const quietZone = 2;
+      const total = size + quietZone * 2;
+      let pathData = "";
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (QR_MATRIX[r][c] === 1) {
+            const x = c + quietZone;
+            const y = r + quietZone;
+            pathData += `M${x},${y}h1v1h-1z`;
+          }
+        }
+      }
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${total} ${total}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR Code for ${PUBLIC_PAGES_URL}">
+          <rect width="${total}" height="${total}" fill="#FFFFFF"/>
+          <path d="${pathData}" fill="#36261B"/>
+        </svg>
+      `;
+    }
+
+    // ============================================================================
+    // 7. INITIALIZATION
+    // ============================================================================
+    async function initApp() {
+      renderLocalQRCode();
+      buildProbabilityBars();
+
+      // Configure ONNX Runtime Web for iOS Safari / Mobile compatibility
+      ort.env.wasm.numThreads = 1;
+      ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+
+      try {
+        // Load model_info.json
+        const infoResp = await fetch("./model_info.json", { cache: "no-store" });
+        if (infoResp.ok) {
+          modelInfo = await infoResp.json();
+          buildProbabilityBars();
+        }
+
+        // Load leaf_model.onnx
+        ortSession = await ort.InferenceSession.create("./leaf_model.onnx", {
+          executionProviders: ["wasm"]
+        });
+
+        statusPill.classList.add("ready");
+        statusText.textContent = "Model Ready (On-Device)";
+
+        // Automatically run verification on check_image.jpg on initial load so
+        // probabilities are immediately visible even before camera permission is granted
+        await verifyCheckImage();
+      } catch (err) {
+        console.error("Initialization error:", err);
+        statusText.textContent = "Error loading model";
+        cameraErrorEl.textContent = `Could not initialize ONNX model: ${err.message || err}`;
+        cameraErrorEl.style.display = "block";
+      }
+    }
+
+    // Event Listeners
+    document.getElementById("btn-start-camera").addEventListener("click", () => {
+      if (isCameraRunning) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    });
+
+    document.getElementById("btn-switch-camera").addEventListener("click", () => {
+      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+      if (isCameraRunning) {
+        startCamera();
+      }
+    });
+
+    document.getElementById("tab-camera").addEventListener("click", () => {
+      setActiveTab("camera");
+      if (!isCameraRunning) startCamera();
+    });
+
+    document.getElementById("tab-upload").addEventListener("click", () => {
+      stopCamera();
+      setActiveTab("upload");
+      document.getElementById("file-input").click();
+    });
+
+    document.getElementById("file-input").addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleImageFile(e.target.files[0]);
+      }
+    });
+
+    document.getElementById("btn-check-image").addEventListener("click", () => {
+      verifyCheckImage();
+    });
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>

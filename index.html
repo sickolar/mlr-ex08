@@ -591,12 +591,18 @@
         </div>
         <div class="brand-title">
           <h1>Botanical Leaf Classifier</h1>
-          <p>On-Device MobileNetV3 • Apple, Cherry, Chestnut &amp; Maple</p>
+          <p id="brand-subtitle">On-Device EfficientNet-B0 (Task 4 Best) • Apple, Cherry, Chestnut &amp; Maple</p>
         </div>
       </div>
-      <div id="model-status" class="status-pill">
-        <span class="status-dot"></span>
-        <span id="status-text">Loading ONNX model…</span>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <select id="model-select" aria-label="Select ONNX Model" style="padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border-accent); background: var(--bg-page); color: var(--pastel-brown-700); font-size: 0.82rem; font-weight: 600; cursor: pointer; outline: none;">
+          <option value="./best_leaf_model.onnx" selected>Task 4 Best: EfficientNet-B0 (89.7%)</option>
+          <option value="./leaf_model.onnx">Task 2 Baseline: MobileNetV3-Small</option>
+        </select>
+        <div id="model-status" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="status-text">Loading ONNX model…</span>
+        </div>
       </div>
     </header>
 
@@ -1034,8 +1040,38 @@
     }
 
     // ============================================================================
-    // 7. INITIALIZATION
+    // 7. INITIALIZATION & MODEL SWITCHING
     // ============================================================================
+    async function loadSelectedModel(modelPath) {
+      statusPill.classList.remove("ready");
+      statusText.textContent = "Loading ONNX model…";
+      cameraErrorEl.style.display = "none";
+
+      const brandSub = document.getElementById("brand-subtitle");
+      if (modelPath.includes("best_leaf_model")) {
+        brandSub.textContent = "On-Device EfficientNet-B0 (Task 4 Best) • Apple, Cherry, Chestnut & Maple";
+      } else {
+        brandSub.textContent = "On-Device MobileNetV3 (Task 2 Baseline) • Apple, Cherry, Chestnut & Maple";
+      }
+
+      try {
+        ortSession = await ort.InferenceSession.create(modelPath, {
+          executionProviders: ["wasm"]
+        });
+        statusPill.classList.add("ready");
+        statusText.textContent = "Model Ready (On-Device)";
+
+        if (uploadedImgEl.style.display === "block" && uploadedImgEl.naturalWidth > 0) {
+          await classifySource(uploadedImgEl, uploadedImgEl.naturalWidth, uploadedImgEl.naturalHeight);
+        }
+      } catch (err) {
+        console.error("Model load error:", err);
+        statusText.textContent = "Error loading model";
+        cameraErrorEl.textContent = `Could not initialize ONNX model: ${err.message || err}`;
+        cameraErrorEl.style.display = "block";
+      }
+    }
+
     async function initApp() {
       renderLocalQRCode();
       buildProbabilityBars();
@@ -1045,27 +1081,21 @@
       ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
 
       try {
-        // Load model_info.json
         const infoResp = await fetch("./model_info.json", { cache: "no-store" });
         if (infoResp.ok) {
           modelInfo = await infoResp.json();
           buildProbabilityBars();
         }
-
-        // Load leaf_model.onnx
-        ortSession = await ort.InferenceSession.create("./leaf_model.onnx", {
-          executionProviders: ["wasm"]
-        });
-
-        statusPill.classList.add("ready");
-        statusText.textContent = "Model Ready (On-Device)";
+        const selectEl = document.getElementById("model-select");
+        await loadSelectedModel(selectEl.value);
       } catch (err) {
         console.error("Initialization error:", err);
-        statusText.textContent = "Error loading model";
-        cameraErrorEl.textContent = `Could not initialize ONNX model: ${err.message || err}`;
-        cameraErrorEl.style.display = "block";
       }
     }
+
+    document.getElementById("model-select").addEventListener("change", (e) => {
+      loadSelectedModel(e.target.value);
+    });
 
     // Event Listeners
     document.getElementById("btn-start-camera").addEventListener("click", () => {

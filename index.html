@@ -185,49 +185,13 @@
       font-weight: 500;
     }
 
-    /* Mode Tabs */
-    .mode-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: var(--bg-page);
-      padding: 5px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-soft);
-      margin-bottom: 18px;
-      gap: 6px;
-    }
-
-    .tab-btn {
-      appearance: none;
-      border: none;
-      background: transparent;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .tab-btn.active {
-      background: var(--surface-white);
-      color: var(--pastel-brown-700);
-      box-shadow: 0 2px 8px rgba(94, 67, 48, 0.08);
-      border: 1px solid var(--border-soft);
-    }
-
     /* Viewport / Camera Container */
     .viewport-wrapper {
       position: relative;
       width: 100%;
       aspect-ratio: 1 / 1;
       max-height: 420px;
-      background: linear-gradient(145deg, #F6EFE8 0%, #EAE0D5 100%);
+      background: linear-gradient(145deg, #F8F3EE 0%, #EFE5DC 100%);
       border-radius: var(--radius-md);
       overflow: hidden;
       border: 1px solid var(--border-accent);
@@ -277,33 +241,45 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
-    .viewport-placeholder svg {
-      color: var(--pastel-brown-500);
-      opacity: 0.85;
-    }
-
-    /* Controls Bar */
-    .controls-row {
+    .placeholder-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--surface-white);
+      border: 1px solid var(--border-accent);
+      box-shadow: var(--shadow-sm);
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      color: var(--pastel-brown-500);
+    }
+
+    /* Controls Bar — Only Rear Camera and Upload Leaf Photo */
+    .controls-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       margin-top: 16px;
     }
 
+    @media (max-width: 420px) {
+      .controls-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .btn {
-      flex: 1;
-      min-width: 135px;
       appearance: none;
       border: 1px solid transparent;
       border-radius: var(--radius-sm);
-      padding: 12px 16px;
-      font-size: 0.9rem;
+      padding: 13px 16px;
+      font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -330,52 +306,47 @@
 
     .btn-secondary:hover {
       background: var(--pastel-brown-100);
-    }
-
-    .btn-outline {
-      background: var(--surface-white);
-      color: var(--text-secondary);
-      border-color: var(--border-soft);
-    }
-
-    .btn-outline:hover {
-      background: var(--bg-page);
-      color: var(--text-primary);
+      transform: translateY(-1px);
     }
 
     .file-input-hidden {
       display: none;
     }
 
-    /* Model Input Preview Strip */
-    .tensor-preview-bar {
+    /* Fast Static Pipeline Spec Strip (replaces delayed canvas preview) */
+    .pipeline-spec-bar {
       margin-top: 16px;
-      padding: 12px 14px;
+      padding: 12px 15px;
       background: var(--surface-warm);
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
-    #crop-canvas {
-      width: 56px;
-      height: 56px;
+    .spec-badge {
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
-      border: 1px solid var(--border-accent);
       background: var(--pastel-brown-100);
+      border: 1px solid var(--border-accent);
+      color: var(--pastel-brown-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.78rem;
       flex-shrink: 0;
-      image-rendering: auto;
     }
 
-    .tensor-meta {
+    .spec-text {
       font-size: 0.78rem;
       color: var(--text-secondary);
       line-height: 1.45;
     }
 
-    .tensor-meta strong {
+    .spec-text strong {
       color: var(--text-primary);
       display: block;
       font-size: 0.82rem;
@@ -434,7 +405,7 @@
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-sm);
       padding: 12px 14px;
-      transition: border-color 0.2s ease, transform 0.2s ease;
+      transition: border-color 0.15s ease;
     }
 
     .prob-item.winner {
@@ -501,73 +472,11 @@
       width: 0%;
       border-radius: 999px;
       background: linear-gradient(90deg, var(--pastel-brown-300) 0%, var(--pastel-brown-500) 100%);
-      transition: width 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: width 0.12s ease-out;
     }
 
     .prob-item.winner .prob-fill {
       background: linear-gradient(90deg, var(--pastel-brown-400) 0%, var(--pastel-brown-600) 100%);
-    }
-
-    /* Verification Box for check_image.jpg */
-    .verification-box {
-      margin-top: 20px;
-      padding: 16px;
-      border-radius: var(--radius-md);
-      background: var(--bg-page);
-      border: 1px solid var(--border-accent);
-      display: none;
-    }
-
-    .verification-box.visible {
-      display: block;
-    }
-
-    .verification-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .verification-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--pastel-brown-700);
-    }
-
-    .match-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 999px;
-      background: var(--success-bg);
-      color: var(--success-text);
-      border: 1px solid var(--success-border);
-    }
-
-    .verify-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .verify-table th,
-    .verify-table td {
-      padding: 6px 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-soft);
-    }
-
-    .verify-table th {
-      color: var(--text-secondary);
-      font-weight: 600;
-    }
-
-    .verify-table td.mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     /* Footer / QR Code Card */
@@ -652,6 +561,7 @@
       max-width: 260px;
       background: var(--surface-warm);
       padding: 12px 14px;
+      border-radius: 999px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-soft);
     }
@@ -696,76 +606,60 @@
       <section class="card" aria-label="Image Input">
         <div class="card-header">
           <div class="card-title">
-            <span>Input Source</span>
+            <span>Leaf Viewfinder</span>
           </div>
-          <span id="fps-badge" class="card-subtitle">96 × 96 RGB Tensor</span>
-        </div>
-
-        <div class="mode-tabs" role="tablist">
-          <button id="tab-camera" class="tab-btn active" type="button" role="tab" aria-selected="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-              <circle cx="12" cy="13" r="3"/>
-            </svg>
-            Live Phone Camera
-          </button>
-          <button id="tab-upload" class="tab-btn" type="button" role="tab" aria-selected="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-              <circle cx="9" cy="9" r="2"/>
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-            </svg>
-            Photo / Check Image
-          </button>
+          <span class="card-subtitle">96 × 96 RGB Tensor</span>
         </div>
 
         <div class="viewport-wrapper">
           <!-- Playsinline & muted are required for Safari on iPhone live video -->
           <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
-          <img id="uploaded-image" alt="Selected leaf for classification" />
+          <img id="uploaded-image" alt="Uploaded leaf for classification" />
           <div id="crop-guide" class="crop-guide">
             <span class="crop-guide-label">Central Square Crop (96×96)</span>
           </div>
           <div id="viewport-placeholder" class="viewport-placeholder">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-              <circle cx="12" cy="13" r="3"/>
-            </svg>
+            <div class="placeholder-circle">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+              </svg>
+            </div>
             <div>
-              <strong>Point your rear camera at a leaf</strong>
-              <p style="font-size: 0.82rem; margin-top: 4px;">Or upload a photo / test <code>check_image.jpg</code> below</p>
+              <strong>Ready to classify a leaf</strong>
+              <p style="font-size: 0.84rem; margin-top: 4px;">Start your phone's rear camera or upload a leaf photo below</p>
             </div>
           </div>
         </div>
 
         <div id="camera-error" class="error-banner"></div>
 
-        <!-- Camera & Fallback Controls -->
+        <!-- Only Two Clean Buttons: Rear Camera & Upload Leaf Photo -->
         <div class="controls-row">
           <button id="btn-start-camera" class="btn btn-primary" type="button">
-            Start Rear Camera
-          </button>
-          <button id="btn-switch-camera" class="btn btn-outline" type="button" style="display: none;">
-            Flip Camera
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+            <span id="btn-camera-label">Rear Camera</span>
           </button>
           <label for="file-input" class="btn btn-secondary">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" x2="12" y1="3" y2="15"/>
+            </svg>
             Upload Leaf Photo
           </label>
           <input id="file-input" class="file-input-hidden" type="file" accept="image/*" />
         </div>
 
-        <div class="controls-row" style="margin-top: 10px;">
-          <button id="btn-check-image" class="btn btn-outline" type="button">
-            Verify check_image.jpg vs Notebook
-          </button>
-        </div>
-
-        <!-- 96x96 Preprocessed Crop Preview -->
-        <div class="tensor-preview-bar">
-          <canvas id="crop-canvas" width="96" height="96"></canvas>
-          <div class="tensor-meta">
-            <strong>Model Input Preview (96 × 96 Square Crop)</strong>
-            <span>RGB scaled to [0, 1], normalized by ImageNet mean &amp; std, shape <code>1×3×96×96</code> (NCHW)</span>
+        <!-- Instant Pipeline Status Strip (No delayed secondary preview) -->
+        <div class="pipeline-spec-bar">
+          <div class="spec-badge">96px</div>
+          <div class="spec-text">
+            <strong>Preprocessing Pipeline</strong>
+            <span>Central square crop → 96×96 resize → RGB [0, 1] → ImageNet mean/std (<code>1×3×96×96</code>)</span>
           </div>
         </div>
       </section>
@@ -789,25 +683,6 @@
 
         <div id="prob-list" class="prob-list">
           <!-- Populated dynamically from model_info.json classes -->
-        </div>
-
-        <!-- Notebook Verification Comparison Table -->
-        <div id="verification-box" class="verification-box">
-          <div class="verification-header">
-            <span class="verification-title">Notebook Verification (<code>check_image.jpg</code>)</span>
-            <span id="verify-badge" class="match-badge">Checking…</span>
-          </div>
-          <table class="verify-table">
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Page Probability</th>
-                <th>check_expected.json</th>
-                <th>Diff</th>
-              </tr>
-            </thead>
-            <tbody id="verify-tbody"></tbody>
-          </table>
         </div>
       </section>
     </main>
@@ -848,9 +723,14 @@
     let ortSession = null;
     let videoStream = null;
     let isCameraRunning = false;
-    let currentFacingMode = "environment"; // Rear camera by default on phones
     let animationFrameId = null;
     let isInferring = false;
+
+    // Offscreen canvas used purely in memory for fast central crop & 96x96 resize
+    const cropCanvas = document.createElement("canvas");
+    cropCanvas.width = 96;
+    cropCanvas.height = 96;
+    const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
 
     // DOM Elements
     const statusPill = document.getElementById("model-status");
@@ -860,15 +740,11 @@
     const cropGuideEl = document.getElementById("crop-guide");
     const placeholderEl = document.getElementById("viewport-placeholder");
     const cameraErrorEl = document.getElementById("camera-error");
-    const cropCanvas = document.getElementById("crop-canvas");
-    const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
+    const btnCameraLabel = document.getElementById("btn-camera-label");
     const probListEl = document.getElementById("prob-list");
     const topSpeciesEl = document.getElementById("top-species");
     const topConfidenceEl = document.getElementById("top-confidence");
     const inferenceTimeEl = document.getElementById("inference-time");
-    const verifyBoxEl = document.getElementById("verification-box");
-    const verifyTbodyEl = document.getElementById("verify-tbody");
-    const verifyBadgeEl = document.getElementById("verify-badge");
 
     // ============================================================================
     // 2. PREPROCESSING PIPELINE (Matches model_info.json & Notebook Transform)
@@ -889,10 +765,9 @@
       const sx = Math.floor((sourceWidth - side) / 2);
       const sy = Math.floor((sourceHeight - side) / 2);
 
-      // Step 2: Resize central square crop to 96 × 96 on the offscreen/preview canvas
+      // Step 2: Resize central square crop to 96 × 96 on the offscreen canvas
       cropCanvas.width = size;
       cropCanvas.height = size;
-      cropCtx.clearRect(0, 0, size, size);
       cropCtx.drawImage(sourceElement, sx, sy, side, side, 0, 0, size, size);
 
       // Step 3: Read RGBA bytes and convert to standardized Float32 NCHW tensor (1 × 3 × 96 × 96)
@@ -1023,7 +898,7 @@
         const constraints = {
           audio: false,
           video: {
-            facingMode: { ideal: currentFacingMode },
+            facingMode: { ideal: "environment" },
             width: { ideal: 640 },
             height: { ideal: 640 }
           }
@@ -1035,18 +910,14 @@
         uploadedImgEl.style.display = "none";
         placeholderEl.style.display = "none";
         cropGuideEl.style.display = "block";
-        verifyBoxEl.classList.remove("visible");
 
         await videoEl.play();
         isCameraRunning = true;
-
-        document.getElementById("btn-start-camera").textContent = "Stop Camera";
-        document.getElementById("btn-switch-camera").style.display = "inline-flex";
-        setActiveTab("camera");
+        btnCameraLabel.textContent = "Stop Camera";
 
         requestAnimationFrame(cameraLoop);
       } catch (err) {
-        cameraErrorEl.textContent = `Camera access unavailable (${err.message || err.name}). You can upload a leaf photo or test check_image.jpg below.`;
+        cameraErrorEl.textContent = `Camera access unavailable (${err.message || err.name}). Please use "Upload Leaf Photo" instead.`;
         cameraErrorEl.style.display = "block";
       }
     }
@@ -1064,8 +935,10 @@
       videoEl.srcObject = null;
       videoEl.style.display = "none";
       cropGuideEl.style.display = "none";
-      document.getElementById("btn-start-camera").textContent = "Start Rear Camera";
-      document.getElementById("btn-switch-camera").style.display = "none";
+      btnCameraLabel.textContent = "Rear Camera";
+      if (uploadedImgEl.style.display === "none") {
+        placeholderEl.style.display = "flex";
+      }
     }
 
     async function cameraLoop() {
@@ -1079,29 +952,12 @@
     }
 
     // ============================================================================
-    // 5. PHOTO UPLOAD & NOTEBOOK check_image.jpg VERIFICATION
+    // 5. PHOTO UPLOAD FALLBACK
     // ============================================================================
-    function setActiveTab(mode) {
-      const camTab = document.getElementById("tab-camera");
-      const upTab = document.getElementById("tab-upload");
-      if (mode === "camera") {
-        camTab.classList.add("active");
-        camTab.setAttribute("aria-selected", "true");
-        upTab.classList.remove("active");
-        upTab.setAttribute("aria-selected", "false");
-      } else {
-        upTab.classList.add("active");
-        upTab.setAttribute("aria-selected", "true");
-        camTab.classList.remove("active");
-        camTab.setAttribute("aria-selected", "false");
-      }
-    }
-
     function handleImageFile(file) {
       if (!file) return;
       stopCamera();
-      setActiveTab("upload");
-      verifyBoxEl.classList.remove("visible");
+      cameraErrorEl.style.display = "none";
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -1113,61 +969,6 @@
         uploadedImgEl.src = e.target.result;
       };
       reader.readAsDataURL(file);
-    }
-
-    async function verifyCheckImage() {
-      stopCamera();
-      setActiveTab("upload");
-      cameraErrorEl.style.display = "none";
-
-      try {
-        const expectedResp = await fetch("./check_expected.json", { cache: "no-store" });
-        const expectedJson = await expectedResp.json();
-
-        await new Promise((resolve, reject) => {
-          uploadedImgEl.onload = resolve;
-          uploadedImgEl.onerror = reject;
-          uploadedImgEl.src = "./check_image.jpg?t=" + Date.now();
-        });
-
-        placeholderEl.style.display = "none";
-        uploadedImgEl.style.display = "block";
-
-        const probs = await classifySource(
-          uploadedImgEl,
-          uploadedImgEl.naturalWidth,
-          uploadedImgEl.naturalHeight
-        );
-
-        if (!probs) return;
-
-        verifyTbodyEl.innerHTML = "";
-        let maxDiff = 0;
-
-        modelInfo.classes.forEach((cls, idx) => {
-          const pageVal = probs[idx];
-          const expVal = expectedJson[cls];
-          const diff = Math.abs(pageVal - expVal);
-          if (diff > maxDiff) maxDiff = diff;
-
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td style="text-transform: capitalize; font-weight: 600;">${cls}</td>
-            <td class="mono">${pageVal.toFixed(6)}</td>
-            <td class="mono">${expVal.toFixed(6)}</td>
-            <td class="mono">${diff.toExponential(2)}</td>
-          `;
-          verifyTbodyEl.appendChild(tr);
-        });
-
-        const agreesToThreeDecimals = maxDiff < 0.0005;
-        verifyBadgeEl.textContent = agreesToThreeDecimals
-          ? `✓ Matches to 3+ decimals (max diff ${maxDiff.toFixed(6)})`
-          : `Max diff: ${maxDiff.toFixed(5)}`;
-        verifyBoxEl.classList.add("visible");
-      } catch (err) {
-        console.error("Failed to verify check_image.jpg:", err);
-      }
     }
 
     // ============================================================================
@@ -1258,10 +1059,6 @@
 
         statusPill.classList.add("ready");
         statusText.textContent = "Model Ready (On-Device)";
-
-        // Automatically run verification on check_image.jpg on initial load so
-        // probabilities are immediately visible even before camera permission is granted
-        await verifyCheckImage();
       } catch (err) {
         console.error("Initialization error:", err);
         statusText.textContent = "Error loading model";
@@ -1279,32 +1076,11 @@
       }
     });
 
-    document.getElementById("btn-switch-camera").addEventListener("click", () => {
-      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-      if (isCameraRunning) {
-        startCamera();
-      }
-    });
-
-    document.getElementById("tab-camera").addEventListener("click", () => {
-      setActiveTab("camera");
-      if (!isCameraRunning) startCamera();
-    });
-
-    document.getElementById("tab-upload").addEventListener("click", () => {
-      stopCamera();
-      setActiveTab("upload");
-      document.getElementById("file-input").click();
-    });
-
     document.getElementById("file-input").addEventListener("change", (e) => {
       if (e.target.files && e.target.files[0]) {
         handleImageFile(e.target.files[0]);
+        e.target.value = "";
       }
-    });
-
-    document.getElementById("btn-check-image").addEventListener("click", () => {
-      verifyCheckImage();
     });
 
     window.addEventListener("DOMContentLoaded", initApp);

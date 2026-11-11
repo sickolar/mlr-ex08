@@ -919,7 +919,7 @@
 
         await videoEl.play();
         isCameraRunning = true;
-        btnCameraLabel.textContent = "Stop Camera";
+        btnCameraLabel.textContent = "Take Photo (Freeze)";
 
         requestAnimationFrame(cameraLoop);
       } catch (err) {
@@ -928,7 +928,31 @@
       }
     }
 
-    function stopCamera() {
+    function captureAndFreezeFrame() {
+      if (videoEl.readyState >= videoEl.HAVE_CURRENT_DATA && videoEl.videoWidth > 0) {
+        const vw = videoEl.videoWidth;
+        const vh = videoEl.videoHeight;
+        const side = Math.min(vw, vh);
+        const sx = Math.floor((vw - side) / 2);
+        const sy = Math.floor((vh - side) / 2);
+
+        const snapCanvas = document.createElement("canvas");
+        snapCanvas.width = side;
+        snapCanvas.height = side;
+        const snapCtx = snapCanvas.getContext("2d");
+        snapCtx.drawImage(videoEl, sx, sy, side, side, 0, 0, side, side);
+
+        uploadedImgEl.onload = async () => {
+          placeholderEl.style.display = "none";
+          uploadedImgEl.style.display = "block";
+          await classifySource(uploadedImgEl, uploadedImgEl.naturalWidth, uploadedImgEl.naturalHeight);
+        };
+        uploadedImgEl.src = snapCanvas.toDataURL("image/jpeg", 0.95);
+      }
+      stopCamera(true);
+    }
+
+    function stopCamera(keepFrozenImage = false) {
       isCameraRunning = false;
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -942,7 +966,7 @@
       videoEl.style.display = "none";
       cropGuideEl.style.display = "none";
       btnCameraLabel.textContent = "Rear Camera";
-      if (uploadedImgEl.style.display === "none") {
+      if (!keepFrozenImage && uploadedImgEl.style.display === "none") {
         placeholderEl.style.display = "flex";
       }
     }
@@ -1100,9 +1124,15 @@
     // Event Listeners
     document.getElementById("btn-start-camera").addEventListener("click", () => {
       if (isCameraRunning) {
-        stopCamera();
+        captureAndFreezeFrame();
       } else {
         startCamera();
+      }
+    });
+
+    videoEl.addEventListener("click", () => {
+      if (isCameraRunning) {
+        captureAndFreezeFrame();
       }
     });
 

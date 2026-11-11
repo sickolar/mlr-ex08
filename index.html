@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-  <title>Leaf Classifier — MobileNetV3 ONNX Web App</title>
+  <meta name="color-scheme" content="light only" />
+  <title>Leaf Classifier — MobileNetV3 &amp; EfficientNet ONNX Web App</title>
   <!-- ONNX Runtime Web loaded from CDN (the only external resource; all inference happens locally on-device) -->
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
   <style>
     :root {
+      color-scheme: light only;
       /* Modern Pastel Brown & Crisp White Palette */
       --bg-page: #FAF6F2;
       --bg-subtle: #F3EBE3;
@@ -25,9 +27,6 @@
       --text-muted: #A18C7D;
       --border-soft: #E8DDD3;
       --border-accent: #D4BFAF;
-      --success-bg: #EDF5EE;
-      --success-text: #2F6839;
-      --success-border: #C3DEC7;
       --shadow-sm: 0 4px 14px rgba(94, 67, 48, 0.06);
       --shadow-md: 0 12px 32px rgba(94, 67, 48, 0.09);
       --radius-lg: 22px;
@@ -48,7 +47,7 @@
       color: var(--text-primary);
       min-height: 100vh;
       line-height: 1.5;
-      padding: 20px 16px 48px;
+      padding: 16px 14px 40px;
     }
 
     .app-container {
@@ -56,7 +55,7 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 18px;
     }
 
     /* Header */
@@ -64,25 +63,25 @@
       background: var(--surface-white);
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-lg);
-      padding: 24px 28px;
+      padding: 18px 24px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
 
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .brand-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
       background: linear-gradient(135deg, var(--pastel-brown-100) 0%, var(--pastel-brown-200) 100%);
       border: 1px solid var(--border-accent);
       display: flex;
@@ -93,25 +92,44 @@
     }
 
     .brand-title h1 {
-      font-size: 1.45rem;
+      font-size: 1.3rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--text-primary);
     }
 
     .brand-title p {
-      font-size: 0.9rem;
+      font-size: 0.84rem;
       color: var(--text-secondary);
-      margin-top: 2px;
+      margin-top: 1px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .model-select {
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-accent);
+      background: var(--surface-white);
+      color: var(--pastel-brown-700);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
     }
 
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 14px;
+      padding: 7px 14px;
       border-radius: 999px;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
       background: var(--pastel-brown-100);
       color: var(--pastel-brown-700);
@@ -122,43 +140,34 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--pastel-brown-500);
+      background: var(--pastel-brown-400);
       transition: background 0.3s ease;
     }
 
     .status-pill.ready {
-      background: var(--success-bg);
-      color: var(--success-text);
-      border-color: var(--success-border);
+      background: var(--surface-white);
+      color: var(--pastel-brown-700);
+      border-color: var(--pastel-brown-400);
     }
 
     .status-pill.ready .status-dot {
-      background: #378845;
-      box-shadow: 0 0 0 3px rgba(55, 136, 69, 0.18);
+      background: var(--pastel-brown-600);
+      box-shadow: 0 0 0 3px var(--pastel-brown-100);
     }
 
     /* Main Grid */
     .main-grid {
       display: grid;
       grid-template-columns: 1.05fr 0.95fr;
-      gap: 22px;
+      gap: 18px;
       align-items: start;
-    }
-
-    @media (max-width: 800px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-      .app-header {
-        padding: 18px 20px;
-      }
     }
 
     .card {
       background: var(--surface-white);
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 20px;
       box-shadow: var(--shadow-md);
     }
 
@@ -166,12 +175,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       gap: 12px;
     }
 
     .card-title {
-      font-size: 1.08rem;
+      font-size: 1.04rem;
       font-weight: 700;
       color: var(--text-primary);
       display: flex;
@@ -180,7 +189,7 @@
     }
 
     .card-subtitle {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       font-weight: 500;
     }
@@ -190,8 +199,8 @@
       position: relative;
       width: 100%;
       aspect-ratio: 1 / 1;
-      max-height: 420px;
-      background: linear-gradient(145deg, #F8F3EE 0%, #EFE5DC 100%);
+      max-height: 360px;
+      background: linear-gradient(145deg, #F6EFE8 0%, #EAE0D5 100%);
       border-radius: var(--radius-md);
       overflow: hidden;
       border: 1px solid var(--border-accent);
@@ -236,17 +245,17 @@
 
     .viewport-placeholder {
       text-align: center;
-      padding: 28px;
+      padding: 24px;
       color: var(--text-secondary);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .placeholder-circle {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       background: var(--surface-white);
       border: 1px solid var(--border-accent);
@@ -261,22 +270,16 @@
     .controls-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    @media (max-width: 420px) {
-      .controls-row {
-        grid-template-columns: 1fr;
-      }
+      gap: 10px;
+      margin-top: 14px;
     }
 
     .btn {
       appearance: none;
       border: 1px solid transparent;
       border-radius: var(--radius-sm);
-      padding: 13px 16px;
-      font-size: 0.92rem;
+      padding: 12px 14px;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
@@ -313,52 +316,13 @@
       display: none;
     }
 
-    /* Fast Static Pipeline Spec Strip (replaces delayed canvas preview) */
-    .pipeline-spec-bar {
-      margin-top: 16px;
-      padding: 12px 15px;
-      background: var(--surface-warm);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .spec-badge {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: var(--pastel-brown-100);
-      border: 1px solid var(--border-accent);
-      color: var(--pastel-brown-600);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.78rem;
-      flex-shrink: 0;
-    }
-
-    .spec-text {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .spec-text strong {
-      color: var(--text-primary);
-      display: block;
-      font-size: 0.82rem;
-    }
-
-    /* Top Prediction Banner */
+    /* Top Prediction Winner Banner — Directly below buttons so it's always visible while filming! */
     .top-prediction-banner {
       background: linear-gradient(135deg, var(--bg-page) 0%, var(--pastel-brown-100) 100%);
       border: 1px solid var(--border-accent);
       border-radius: var(--radius-md);
-      padding: 18px 20px;
-      margin-bottom: 20px;
+      padding: 14px 18px;
+      margin-top: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -366,7 +330,7 @@
     }
 
     .top-pred-label {
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-weight: 700;
@@ -374,20 +338,20 @@
     }
 
     .top-pred-species {
-      font-size: 1.55rem;
+      font-size: 1.45rem;
       font-weight: 800;
       color: var(--text-primary);
       text-transform: capitalize;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .top-pred-conf {
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       font-weight: 800;
       color: var(--pastel-brown-600);
       font-variant-numeric: tabular-nums;
       background: var(--surface-white);
-      padding: 8px 14px;
+      padding: 6px 14px;
       border-radius: 12px;
       border: 1px solid var(--border-soft);
       box-shadow: var(--shadow-sm);
@@ -397,7 +361,7 @@
     .prob-list {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     .prob-item {
@@ -484,13 +448,13 @@
       background: var(--surface-white);
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-lg);
-      padding: 24px 28px;
+      padding: 22px 26px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 24px;
+      gap: 20px;
     }
 
     .qr-section {
@@ -509,8 +473,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 136px;
-      height: 136px;
+      width: 132px;
+      height: 132px;
       flex-shrink: 0;
     }
 
@@ -521,14 +485,14 @@
     }
 
     .qr-info h3 {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 4px;
     }
 
     .qr-info p {
-      font-size: 0.86rem;
+      font-size: 0.85rem;
       color: var(--text-secondary);
       margin-bottom: 10px;
       max-width: 440px;
@@ -538,7 +502,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 700;
       color: var(--pastel-brown-600);
       background: var(--bg-page);
@@ -561,13 +525,12 @@
       max-width: 260px;
       background: var(--surface-warm);
       padding: 12px 14px;
-      border-radius: 999px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-soft);
     }
 
     .error-banner {
-      margin-top: 12px;
+      margin-top: 10px;
       padding: 10px 14px;
       border-radius: var(--radius-sm);
       background: #FDF2F0;
@@ -575,6 +538,21 @@
       color: #8E3023;
       font-size: 0.82rem;
       display: none;
+    }
+
+    @media (max-width: 800px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-header {
+        padding: 14px 16px;
+      }
+      .card {
+        padding: 16px;
+      }
+      .viewport-wrapper {
+        max-height: 290px;
+      }
     }
   </style>
 </head>
@@ -584,56 +562,56 @@
     <header class="app-header">
       <div class="brand-group">
         <div class="brand-icon" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
             <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
           </svg>
         </div>
         <div class="brand-title">
           <h1>Botanical Leaf Classifier</h1>
-          <p id="brand-subtitle">On-Device EfficientNet-B0 (Task 4 Best) • Apple, Cherry, Chestnut &amp; Maple</p>
+          <p id="brand-subtitle">On-Device EfficientNet-B0 • Apple, Cherry, Chestnut &amp; Maple</p>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <select id="model-select" aria-label="Select ONNX Model" style="padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border-accent); background: var(--bg-page); color: var(--pastel-brown-700); font-size: 0.82rem; font-weight: 600; cursor: pointer; outline: none;">
-          <option value="./best_leaf_model.onnx" selected>Task 4 Best: EfficientNet-B0 (89.7%)</option>
-          <option value="./leaf_model.onnx">Task 2 Baseline: MobileNetV3-Small</option>
+      <div class="header-controls">
+        <select id="model-select" class="model-select" aria-label="Select ONNX Model">
+          <option value="./best_leaf_model.onnx" selected>Task 4 Best: EfficientNet-B0</option>
+          <option value="./leaf_model.onnx">Task 2: MobileNetV3</option>
         </select>
         <div id="model-status" class="status-pill">
           <span class="status-dot"></span>
-          <span id="status-text">Loading ONNX model…</span>
+          <span id="status-text">Loading model…</span>
         </div>
       </div>
     </header>
 
     <!-- Main Content Grid -->
     <main class="main-grid">
-      <!-- Left Column: Camera & Photo Input -->
+      <!-- Left Column: Camera, Buttons & Live Winner Banner -->
       <section class="card" aria-label="Image Input">
         <div class="card-header">
           <div class="card-title">
             <span>Leaf Viewfinder</span>
           </div>
-          <span class="card-subtitle">96 × 96 RGB Tensor</span>
+          <span id="inference-time" class="card-subtitle">96 × 96 RGB</span>
         </div>
 
         <div class="viewport-wrapper">
           <!-- Playsinline & muted are required for Safari on iPhone live video -->
           <video id="camera-video" playsinline webkit-playsinline muted autoplay></video>
-          <img id="uploaded-image" alt="Uploaded leaf for classification" />
+          <img id="uploaded-image" alt="Selected leaf for classification" />
           <div id="crop-guide" class="crop-guide">
-            <span class="crop-guide-label">Central Square Crop (96×96)</span>
+            <span class="crop-guide-label">Tap video or button to freeze photo</span>
           </div>
           <div id="viewport-placeholder" class="viewport-placeholder">
             <div class="placeholder-circle">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
                 <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
               </svg>
             </div>
             <div>
               <strong>Ready to classify a leaf</strong>
-              <p style="font-size: 0.84rem; margin-top: 4px;">Start your phone's rear camera or upload a leaf photo below</p>
+              <p style="font-size: 0.82rem; margin-top: 3px;">Start your rear camera or upload a leaf photo below</p>
             </div>
           </div>
         </div>
@@ -660,31 +638,23 @@
           <input id="file-input" class="file-input-hidden" type="file" accept="image/*" />
         </div>
 
-        <!-- Instant Pipeline Status Strip (No delayed secondary preview) -->
-        <div class="pipeline-spec-bar">
-          <div class="spec-badge">96px</div>
-          <div class="spec-text">
-            <strong>Preprocessing Pipeline</strong>
-            <span>Central square crop → 96×96 resize → RGB [0, 1] → ImageNet mean/std (<code>1×3×96×96</code>)</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Right Column: Live Probabilities -->
-      <section class="card" aria-label="Classification Probabilities">
-        <div class="card-header">
-          <div class="card-title">
-            <span>Class Probabilities</span>
-          </div>
-          <span id="inference-time" class="card-subtitle">Waiting for input…</span>
-        </div>
-
+        <!-- Predicted Species Winner Banner right below camera buttons for instant phone visibility -->
         <div class="top-prediction-banner">
           <div>
-            <div class="top-pred-label">Predicted Species</div>
+            <div class="top-pred-label">Predicted Species (Winner)</div>
             <div id="top-species" class="top-pred-species">—</div>
           </div>
           <div id="top-confidence" class="top-pred-conf">0.0%</div>
+        </div>
+      </section>
+
+      <!-- Right Column: All Class Probabilities -->
+      <section class="card" aria-label="Classification Probabilities">
+        <div class="card-header">
+          <div class="card-title">
+            <span>All Species Probabilities</span>
+          </div>
+          <span class="card-subtitle">Live Softmax Output</span>
         </div>
 
         <div id="prob-list" class="prob-list">
@@ -852,7 +822,7 @@
 
       topSpeciesEl.textContent = modelInfo.classes[bestIdx];
       topConfidenceEl.textContent = (probs[bestIdx] * 100).toFixed(1) + "%";
-      inferenceTimeEl.textContent = `Inference: ${elapsedMs.toFixed(1)} ms`;
+      inferenceTimeEl.textContent = `${elapsedMs.toFixed(0)} ms • 96×96`;
 
       for (let i = 0; i < modelInfo.classes.length; i++) {
         const p = probs[i];
@@ -894,7 +864,7 @@
     }
 
     // ============================================================================
-    // 4. LIVE PHONE CAMERA LOOP (Safari iOS & Android Compatible)
+    // 4. LIVE PHONE CAMERA LOOP & FREEZE-FRAME PHOTO CAPTURE
     // ============================================================================
     async function startCamera() {
       cameraErrorEl.style.display = "none";
@@ -1068,14 +1038,14 @@
     // ============================================================================
     async function loadSelectedModel(modelPath) {
       statusPill.classList.remove("ready");
-      statusText.textContent = "Loading ONNX model…";
+      statusText.textContent = "Loading model…";
       cameraErrorEl.style.display = "none";
 
       const brandSub = document.getElementById("brand-subtitle");
       if (modelPath.includes("best_leaf_model")) {
-        brandSub.textContent = "On-Device EfficientNet-B0 (Task 4 Best) • Apple, Cherry, Chestnut & Maple";
+        brandSub.textContent = "On-Device EfficientNet-B0 • Apple, Cherry, Chestnut & Maple";
       } else {
-        brandSub.textContent = "On-Device MobileNetV3 (Task 2 Baseline) • Apple, Cherry, Chestnut & Maple";
+        brandSub.textContent = "On-Device MobileNetV3 • Apple, Cherry, Chestnut & Maple";
       }
 
       try {
@@ -1083,7 +1053,7 @@
           executionProviders: ["wasm"]
         });
         statusPill.classList.add("ready");
-        statusText.textContent = "Model Ready (On-Device)";
+        statusText.textContent = "Model Ready";
 
         if (uploadedImgEl.style.display === "block" && uploadedImgEl.naturalWidth > 0) {
           await classifySource(uploadedImgEl, uploadedImgEl.naturalWidth, uploadedImgEl.naturalHeight);
